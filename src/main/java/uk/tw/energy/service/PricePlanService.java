@@ -27,12 +27,8 @@ public class PricePlanService {
     public Optional<Map<String, BigDecimal>> getConsumptionCostOfElectricityReadingsForEachPricePlan(String smartMeterId) {
         Optional<List<ElectricityReading>> electricityReadings = meterReadingService.getReadings(smartMeterId);
 
-        if (!electricityReadings.isPresent()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(pricePlans.stream().collect(
-                Collectors.toMap(PricePlan::getPlanName, t -> calculateCost(electricityReadings.get(), t))));
+        return electricityReadings.map(readings -> pricePlans.stream().collect(
+                Collectors.toMap(PricePlan::getPlanName, t -> calculateCost(readings, t))));
     }
 
     BigDecimal calculateCost(List<ElectricityReading> electricityReadings, PricePlan pricePlan) {
@@ -46,20 +42,26 @@ public class PricePlanService {
     BigDecimal calculateAverageReading(List<ElectricityReading> electricityReadings) {
         BigDecimal summedReadings = electricityReadings.stream()
                 .map(ElectricityReading::getReading)
-                .reduce(BigDecimal.ZERO, (reading, accumulator) -> reading.add(accumulator));
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return summedReadings.divide(BigDecimal.valueOf(electricityReadings.size()), RoundingMode.HALF_UP);
     }
 
     BigDecimal calculateTimeElapsed(List<ElectricityReading> electricityReadings) {
-        ElectricityReading first = electricityReadings.stream()
-                .min(Comparator.comparing(ElectricityReading::getTime))
-                .get();
-        ElectricityReading last = electricityReadings.stream()
-                .max(Comparator.comparing(ElectricityReading::getTime))
-                .get();
+        Optional<ElectricityReading> first = electricityReadings.stream()
+                .min(Comparator.comparing(ElectricityReading::getTime));
 
-        return BigDecimal.valueOf(Duration.between(first.getTime(), last.getTime()).getSeconds() / 3600.0);
+        Optional<ElectricityReading> last = electricityReadings.stream()
+                .max(Comparator.comparing(ElectricityReading::getTime));
+
+        if (!shouldBothPresent(first, last)) {
+            return BigDecimal.ZERO;
+        }
+
+        return BigDecimal.valueOf(Duration.between(first.get().getTime(), last.get().getTime()).getSeconds() / 3600.0);
     }
 
+    private boolean shouldBothPresent(Optional<ElectricityReading> first, Optional<ElectricityReading> last) {
+        return first.isPresent() && last.isPresent();
+    }
 }
