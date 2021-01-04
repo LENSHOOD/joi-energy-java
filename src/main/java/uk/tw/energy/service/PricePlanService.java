@@ -35,7 +35,7 @@ public class PricePlanService {
                 Collectors.toMap(PricePlan::getPlanName, t -> calculateCost(electricityReadings.get(), t))));
     }
 
-    private BigDecimal calculateCost(List<ElectricityReading> electricityReadings, PricePlan pricePlan) {
+    BigDecimal calculateCost(List<ElectricityReading> electricityReadings, PricePlan pricePlan) {
         BigDecimal average = calculateAverageReading(electricityReadings);
         BigDecimal timeElapsed = calculateTimeElapsed(electricityReadings);
 
@@ -43,7 +43,7 @@ public class PricePlanService {
         return averagedCost.multiply(pricePlan.getUnitRate());
     }
 
-    private BigDecimal calculateAverageReading(List<ElectricityReading> electricityReadings) {
+    BigDecimal calculateAverageReading(List<ElectricityReading> electricityReadings) {
         BigDecimal summedReadings = electricityReadings.stream()
                 .map(ElectricityReading::getReading)
                 .reduce(BigDecimal.ZERO, (reading, accumulator) -> reading.add(accumulator));
@@ -51,7 +51,7 @@ public class PricePlanService {
         return summedReadings.divide(BigDecimal.valueOf(electricityReadings.size()), RoundingMode.HALF_UP);
     }
 
-    private BigDecimal calculateTimeElapsed(List<ElectricityReading> electricityReadings) {
+    BigDecimal calculateTimeElapsed(List<ElectricityReading> electricityReadings) {
         ElectricityReading first = electricityReadings.stream()
                 .min(Comparator.comparing(ElectricityReading::getTime))
                 .get();

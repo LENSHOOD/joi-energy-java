@@ -40,7 +40,7 @@ public class PricePlan {
     }
 
 
-    static class PeakTimeMultiplier {
+    public static class PeakTimeMultiplier {
 
         DayOfWeek dayOfWeek;
         BigDecimal multiplier;
